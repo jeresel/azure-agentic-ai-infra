@@ -66,11 +66,11 @@ The precise Terraform filenames and module inputs are defined in the repository 
 | Resource | Configuration |
 |---|---|
 | Development resource group | `rg-agentic-ai-dev` |
-| Original VNet | `vnet-agentic-ai-dev`, `10.20.0.0/16`, Southeast Asia |
-| Original AKS subnet | `snet-aks-dev`, `10.20.1.0/24` |
+| Original VNet | `vnet-agentic-ai-dev`, `xxxxx/16`, Southeast Asia |
+| Original AKS subnet | `snet-aks-dev`, `xxxx/24` |
 | Container registry | `acragenticaidev094b`, Southeast Asia |
-| AKS VNet | `vnet-agentic-ai-aks-dev`, `10.40.0.0/16`, East Asia |
-| AKS subnet | `snet-aks-eastasia-dev`, `10.40.1.0/24` |
+| AKS VNet | `vnet-agentic-ai-aks-dev`, `xxxx/16`, East Asia |
+| AKS subnet | `snet-aks-eastasia-dev`, `xxxx/24` |
 | AKS cluster | `aks-agentic-ai-dev`, East Asia |
 | Node pool | One `Standard_D2as_v5` node (2 vCPU, 8 GiB RAM) |
 | AKS control-plane tier | Free |
@@ -220,23 +220,6 @@ terraform destroy
 **Warning:** This destroys **all resources managed by the development environment state**, including ACR and both VNets, not just AKS. Review the destroy plan carefully. Keep the separate `bootstrap/` backend storage until the environment has been destroyed and its state is no longer needed. Check Azure for leftover resources and charges, including AKS-managed resource groups, disks, public IPs, and load balancers.
 
 If only AKS should be removed while retaining shared resources, use a deliberate configuration change and reviewed plan rather than blindly destroying the whole environment.
-
-## Current progress and next steps
-
-- [x] Create modular Terraform infrastructure repository
-- [x] Configure Azure Blob remote state
-- [x] Provision resource group, networking, and ACR
-- [x] Resolve regional VM SKU restrictions
-- [x] Provision AKS in East Asia with a dedicated VNet
-- [x] Enable OIDC and Workload Identity at cluster level
-- [x] Configure AKS-to-ACR `AcrPull` access
-- [x] Verify AKS node and system pods
-- [ ] Create Kubernetes manifests and read-only RBAC in the application repository
-- [ ] Build the Python/LangGraph troubleshooting agent
-- [ ] Integrate Microsoft Foundry
-- [ ] Add container build and deployment automation with GitHub Actions
-- [ ] Reproduce Kubernetes failures and demonstrate AI-assisted diagnosis
-- [ ] Capture demo evidence and complete cost cleanup
 
 ## Related repository
 
