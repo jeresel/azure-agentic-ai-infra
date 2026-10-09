@@ -1,0 +1,4 @@
+subscription_id = "Y24b9de15-144b-4166-aa90-50be978dea9b"
+location        = "southeastasia"
+environment     = "dev"
+project_name    = "agentic-ai"
