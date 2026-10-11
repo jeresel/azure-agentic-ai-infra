@@ -159,6 +159,7 @@ The configuration was corrected to:
 - Configure AKS to use the East Asia subnet and `Standard_D2as_v5`.
 - Grant the AKS kubelet identity `AcrPull` on the existing registry.
 
+
 The final reviewed plan was:
 
 ```text

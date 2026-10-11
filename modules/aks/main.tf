@@ -13,6 +13,10 @@ resource "azurerm_kubernetes_cluster" "main" {
     vnet_subnet_id              = var.subnet_id
     auto_scaling_enabled        = false
     temporary_name_for_rotation = "tempnode"
+
+    upgrade_settings { 
+      max_surge = "10%"
+      }
   }
 
   identity {

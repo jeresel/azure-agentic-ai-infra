@@ -88,3 +88,25 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
 
   skip_service_principal_aad_check = true
 }
+
+module "foundry_llm" {
+  source = "../../modules/foundry"
+
+  resource_group_id = module.resource_group.id
+  location          = "eastus2"
+  project_name      = var.project_name
+  environment       = var.environment
+  account_name      = "foundry-agentic-ai-us2094b-dev"
+}
+
+module "foundry_deployment" {
+  source = "../../modules/foundry-deployment"
+
+  foundry_account_id = module.foundry_llm.foundry_id
+
+  deployment_name = "gpt-4.1-mini"
+  model_name      = "gpt-4.1-mini"
+  model_version   = "2025-04-14"
+  sku_name        = "GlobalStandard"
+  capacity        = 1
+}
