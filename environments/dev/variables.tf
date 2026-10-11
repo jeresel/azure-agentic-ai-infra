@@ -20,3 +20,8 @@ variable "project_name" {
   type        = string
   default     = "agentic-ai"
 }
+
+variable "foundry_user_principal_id" {
+  description = "Microsoft Entra object ID of the user running the Foundry test"
+  type        = string
+}

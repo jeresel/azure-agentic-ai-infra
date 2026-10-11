@@ -110,3 +110,15 @@ module "foundry_deployment" {
   sku_name        = "GlobalStandard"
   capacity        = 1
 }
+
+resource "azurerm_role_assignment" "foundry_openai_user" {
+  scope                = module.foundry_llm.foundry_id
+  role_definition_name = "Cognitive Services OpenAI User"
+  principal_id         = var.foundry_user_principal_id
+}
+
+resource "azurerm_role_assignment" "foundry_project_user" {
+  scope                = module.foundry_llm.project_id
+  role_definition_name = "Foundry User"
+  principal_id         = var.foundry_user_principal_id
+}
