@@ -241,6 +241,12 @@ If only AKS should be removed while retaining shared resources, use a deliberate
 
 The application and Kubernetes manifests belong in **`azure-agentic-ai-k8s`**. Add the repository's exact GitHub URL here once published.
 
+## Technical Article
+
+I documented the architecture, Terraform deployment, Kubernetes implementation, LangGraph integration, CloudOps GUI, and observability design in a hands-on Medium article.
+
+https://medium.com/@jereselvakumar/building-an-agentic-ai-cloudops-assistant-on-azure-from-terraform-to-kubernetes-and-langgraph-44fa70defcc2
+
 ## Disclaimer
 
 This is a learning and portfolio proof of concept, not a production-hardened deployment. Resource names, availability, and costs may differ across Azure subscriptions. Review permissions, network exposure, and spending before adapting it for production.
