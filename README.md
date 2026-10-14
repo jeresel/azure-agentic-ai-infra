@@ -16,17 +16,19 @@ Infrastructure as Code for an Azure-hosted **Agentic AI CloudOps Assistant**. Th
 ## Architecture
 
 ```mermaid
+
 flowchart TB
-    GitHub[GitHub: azure-agentic-ai-infra] --> TF[Terraform]
-    TF --> State[Azure Storage: Remote Terraform State]
-    TF --> RG[Resource Group: rg-agentic-ai-dev]
-    RG --> SEA[VNet + Subnet: Southeast Asia]
-    RG --> ACR[Azure Container Registry: Southeast Asia]
-    RG --> EA[VNet + Subnet: East Asia]
-    EA --> AKS[AKS: One-node Free-tier cluster]
-    AKS --> WI[OIDC + Workload Identity enabled]
-    ACR -->|AcrPull role for kubelet identity| AKS
-    Apps --> Kubernetes / AI Agent Repo — Deployed on AKS-.-> AKS
+    GitHub["GitHub: azure-agentic-ai-infra"] --> TF["Terraform"]
+    TF --> State["Azure Storage: Remote Terraform State"]
+    TF --> RG["Resource Group: rg-agentic-ai-dev"]
+    RG --> SEA["VNet + Subnet: Southeast Asia"]
+    RG --> ACR["Azure Container Registry: Southeast Asia"]
+    RG --> EA["VNet + Subnet: East Asia"]
+    EA --> AKS["AKS: One-node Free-tier cluster"]
+    AKS --> WI["OIDC + Workload Identity enabled"]
+    ACR -->|"AcrPull role for kubelet identity"| AKS
+    Apps["GitHub: Kubernetes / AI Agent Repo"] -.->|"Application deployed on AKS"| AKS
+
 ```
 
 **Regional design:** Initial networking and ACR were provisioned in **Southeast Asia**. The AKS cluster and its dedicated network were provisioned in **East Asia** because the desired general-purpose VM SKUs were restricted for this subscription in Southeast Asia. ACR remains in Southeast Asia; AKS accesses it using an `AcrPull` role assignment.
