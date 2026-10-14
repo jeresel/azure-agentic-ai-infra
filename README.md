@@ -26,7 +26,7 @@ flowchart TB
     EA --> AKS[AKS: One-node Free-tier cluster]
     AKS --> WI[OIDC + Workload Identity enabled]
     ACR -->|AcrPull role for kubelet identity| AKS
-    Apps[Separate Kubernetes / AI Agent Repo — In Progress] -.-> AKS
+    Apps --> Kubernetes / AI Agent Repo — Deployed on AKS-.-> AKS
 ```
 
 **Regional design:** Initial networking and ACR were provisioned in **Southeast Asia**. The AKS cluster and its dedicated network were provisioned in **East Asia** because the desired general-purpose VM SKUs were restricted for this subscription in Southeast Asia. ACR remains in Southeast Asia; AKS accesses it using an `AcrPull` role assignment.
