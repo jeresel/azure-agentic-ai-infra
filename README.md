@@ -1,8 +1,8 @@
 # Azure Agentic AI CloudOps Assistant — Infrastructure
 
-Infrastructure as Code for an Azure-hosted **Agentic AI CloudOps Assistant**. This repository provisions the Azure foundation for a planned Python/LangGraph assistant that will inspect Kubernetes workloads, investigate failures, and provide AI-assisted troubleshooting recommendations.
+Infrastructure as Code for an Azure-hosted **Agentic AI CloudOps Assistant**. This repository provisions the Azure foundation for a deployed Python/FastAPI and LangGraph-based CloudOps assistant that discovers Kubernetes workloads, collects diagnostic evidence, and supports AI-assisted troubleshooting through Microsoft Foundry.
 
-> **Project status:** Azure infrastructure deployed and AKS connectivity verified. The AI agent and Kubernetes application manifests are being developed separately in [`azure-agentic-ai-k8s`](https://github.com/search?q=azure-agentic-ai-k8s&type=repositories) (replace this search link with the actual repository URL when available).
+> **Project status:** Terraform-managed Azure infrastructure and the CloudOps AI Agent v0.2.0 are deployed on AKS. Kubernetes namespace/pod discovery APIs, GUI dropdowns, and read-only RBAC have been verified. The application source and Kubernetes manifests are maintained in [azure-agentic-ai-k8s](https://github.com/jeresel/azure-agentic-ai-k8s).
 
 ## Project objectives
 
@@ -10,13 +10,12 @@ Infrastructure as Code for an Azure-hosted **Agentic AI CloudOps Assistant**. Th
 - Deploy a small, cost-conscious Azure Kubernetes Service (AKS) cluster for a short-lived proof of concept.
 - Use Azure Container Registry (ACR) with managed identity-based image pulling rather than registry admin credentials.
 - Enable AKS OIDC issuer and Microsoft Entra Workload Identity for future application authentication.
-- Prepare the platform for an AI agent that can diagnose Kubernetes issues using read-only API access and Microsoft Foundry.
+- Run a CloudOps assistant that collects Kubernetes diagnostic evidence using read-only API access and integrates LangGraph with Microsoft Foundry.
 - Keep infrastructure and application delivery in separate GitHub repositories.
 
 ## Architecture
 
 ```mermaid
-
 flowchart TB
     GitHub["GitHub: azure-agentic-ai-infra"] --> TF["Terraform"]
     TF --> State["Azure Storage: Remote Terraform State"]
@@ -27,8 +26,7 @@ flowchart TB
     EA --> AKS["AKS: One-node Free-tier cluster"]
     AKS --> WI["OIDC + Workload Identity enabled"]
     ACR -->|"AcrPull role for kubelet identity"| AKS
-    Apps["GitHub: Kubernetes / AI Agent Repo"] -.->|"Application deployed on AKS"| AKS
-
+    Apps["GitHub: azure-agentic-ai-k8s (deployed)"] -.->|"Application deployed on AKS"| AKS
 ```
 
 **Regional design:** Initial networking and ACR were provisioned in **Southeast Asia**. The AKS cluster and its dedicated network were provisioned in **East Asia** because the desired general-purpose VM SKUs were restricted for this subscription in Southeast Asia. ACR remains in Southeast Asia; AKS accesses it using an `AcrPull` role assignment.
@@ -45,7 +43,9 @@ flowchart TB
 | Networking | Azure VNet, subnet, Azure CNI Overlay, Cilium |
 | Identity | AKS managed identity, OIDC issuer, Microsoft Entra Workload Identity |
 | Developer tooling | Azure CLI, Terraform CLI, kubectl |
-| Planned application | Python, LangGraph, Microsoft Foundry |
+| Observability design | Azure Monitor, Event Hub, Elastic, checkpoint storage |
+| Private connectivity | Azure Private Link, Private Endpoints, Private DNS |
+| Deployed application | Python, FastAPI, LangGraph, Microsoft Foundry integration, CloudOps Web GUI |
 
 ## Repository layout
 
@@ -174,7 +174,6 @@ The configuration was corrected to:
 - Configure AKS to use the East Asia subnet and `Standard_D2as_v5`.
 - Grant the AKS kubelet identity `AcrPull` on the existing registry.
 
-
 The final reviewed plan was:
 
 ```text
@@ -209,7 +208,7 @@ kubectl get nodes -o wide
 kubectl get pods -A
 ```
 
-**Observed result:** The single AKS node reached `Ready` on Kubernetes `v1.35.8`. The output showed Cilium, CoreDNS, Azure Workload Identity webhook, CSI drivers, and metrics-server components running. This verifies initial cluster health; application-level testing is a separate phase.
+**Observed result:** The single AKS node reached `Ready` on Kubernetes `v1.35.8`. The output showed Cilium, CoreDNS, Azure Workload Identity webhook, CSI drivers, and metrics-server components running. This verifies initial cluster health. Subsequent application testing confirmed that the deployed FastAPI namespace and pod discovery endpoints returned HTTP 200 and that the GUI dropdowns worked.
 
 ## Security and engineering decisions
 
@@ -217,12 +216,34 @@ kubectl get pods -A
 - **Remote state:** Azure Blob Storage holds the environment state, avoiding state files in Git.
 - **No ACR admin login:** Image pulls use the AKS kubelet managed identity with `AcrPull`.
 - **Workload identity enabled:** AKS OIDC and Workload Identity are enabled in preparation for future pod-level Azure access; individual federated credentials and application permissions are not yet configured.
-- **Application permissions:** The planned troubleshooting agent will use a dedicated Kubernetes ServiceAccount with read-only RBAC. This is not yet deployed.
-- **Declarative Kubernetes:** Namespace, RBAC, Deployments, and Services will be version-controlled as YAML/Kustomize in the separate application repository rather than created imperatively.
+- **Application permissions:** The CloudOps AI Agent is deployed in the `cloudops-ai` namespace with a dedicated Kubernetes ServiceAccount (`cloudops-ai-agent`) and read-only RBAC. Namespace and pod listing were verified using `kubectl auth can-i` and returned `yes`.
+- **Declarative Kubernetes:** Namespace, RBAC, Deployment, and Service manifests are version-controlled as YAML/Kustomize in the [application repository](https://github.com/jeresel/azure-agentic-ai-k8s).
+
+## CloudOps application validation
+
+The CloudOps application is deployed to AKS in namespace `cloudops-ai` as deployment `cloudops-ai-agent` (application image release `v0.2.0`). The web interface uses FastAPI endpoints to discover Kubernetes namespaces and pods dynamically.
+
+| Validation | Evidence |
+|---|---|
+| `GET /api/namespaces` | HTTP 200; returned cluster namespaces |
+| `GET /api/pods?namespace=cloudops-ai` | HTTP 200; returned the CloudOps agent pod |
+| Kubernetes ServiceAccount | `kubectl auth can-i list namespaces` and `list pods` both returned `yes` |
+| CloudOps web interface | Namespace and pod dropdowns verified in the AKS-hosted GUI |
+| AI diagnostics | LangGraph and Microsoft Foundry integration implemented; see the technical article for diagnostic execution evidence |
+
+Application code, troubleshooting workflows, and Kubernetes deployment instructions are documented in the [application repository](https://github.com/jeresel/azure-agentic-ai-k8s).
+
+## Observability and secure connectivity
+
+The infrastructure repository also includes Terraform configuration for the observability architecture: Azure Monitor diagnostics, Event Hub, Elastic integration checkpoint storage, Key Vault, Private Endpoints, Private DNS, and related identity/access controls.
+
+The design routes supported Azure diagnostic telemetry through Azure Monitor diagnostic settings and Event Hub toward Elastic for search and analysis. Azure Private Link and Private Endpoints support private network access to compatible services, reducing dependence on public endpoints; they are **not** the same as IP allowlisting. Private DNS and access controls are required to use the intended private paths.
+
+**Validation boundary:** Terraform configuration and private connectivity design do not alone establish that every telemetry source is flowing end-to-end over a private path. Verify ingestion and network routing separately before making that claim.
 
 ## Cost controls and cleanup
 
-This is a **short-lived proof of concept**, designed to be tested for approximately 24–48 hours and then destroyed to conserve Azure trial credit.
+This is a **cost-conscious proof of concept**. Remove resources when not in use to conserve Azure credit; the cleanup schedule depends on current testing needs.
 
 The AKS **Free tier** removes the AKS management fee, **not** the cost of worker VMs, disks, load balancers, network traffic, ACR, or other services. Budget alerts help monitor spending but do not automatically shut resources down.
 
@@ -239,13 +260,13 @@ If only AKS should be removed while retaining shared resources, use a deliberate
 
 ## Related repository
 
-The application and Kubernetes manifests belong in **`azure-agentic-ai-k8s`**. Add the repository's exact GitHub URL here once published.
+The Kubernetes manifests, FastAPI backend, LangGraph workflow, Microsoft Foundry integration, and CloudOps GUI are maintained in [azure-agentic-ai-k8s](https://github.com/jeresel/azure-agentic-ai-k8s).
 
 ## Technical Article
 
 I documented the architecture, Terraform deployment, Kubernetes implementation, LangGraph integration, CloudOps GUI, and observability design in a hands-on Medium article.
 
-https://medium.com/@jereselvakumar/building-an-agentic-ai-cloudops-assistant-on-azure-from-terraform-to-kubernetes-and-langgraph-44fa70defcc2
+[Building an Agentic AI CloudOps Assistant on Azure: From Terraform to Kubernetes and LangGraph](https://medium.com/@jereselvakumar/building-an-agentic-ai-cloudops-assistant-on-azure-from-terraform-to-kubernetes-and-langgraph-44fa70defcc2)
 
 ## Disclaimer
 
