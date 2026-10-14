@@ -14,9 +14,9 @@ resource "azurerm_kubernetes_cluster" "main" {
     auto_scaling_enabled        = false
     temporary_name_for_rotation = "tempnode"
 
-    upgrade_settings { 
+    upgrade_settings {
       max_surge = "10%"
-      }
+    }
   }
 
   identity {

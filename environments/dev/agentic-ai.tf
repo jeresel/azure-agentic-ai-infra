@@ -122,3 +122,104 @@ resource "azurerm_role_assignment" "foundry_project_user" {
   role_definition_name = "Foundry User"
   principal_id         = var.foundry_user_principal_id
 }
+
+
+module "cloudops_workload_identity" {
+  source = "../../modules/workload-identity"
+
+  resource_group_name = "rg-agentic-ai-dev"
+  location            = "southeastasia"
+
+  identity_name        = "id-cloudops-ai-agent-dev"
+  oidc_issuer_url      = module.aks.oidc_issuer_url
+  namespace            = "cloudops-ai"
+  service_account_name = "cloudops-ai-agent"
+
+  foundry_account_id = module.foundry_llm.foundry_id
+}
+
+module "elastic_private_endpoint" {
+  source = "../../modules/private-endpoint"
+
+  name                   = "pe-elastic-cloudops-dev"
+  network_interface_name = "pe-elastic-cloudops-dev-nic"
+
+  location            = "eastasia"
+  resource_group_name = "rg-agentic-ai-dev"
+
+  virtual_network_name         = "vnet-agentic-ai-aks-dev"
+  private_endpoint_subnet_name = "snet-elastic-pe-eastasia-dev"
+  private_endpoint_subnet_cidr = "10.40.10.0/27" # Example only
+
+  private_link_service_alias = var.elastic_private_link_service_alias
+
+  tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+module "elastic_private_dns" {
+  source = "../../modules/private-dns"
+
+  zone_name           = "privatelink.southeastasia.azure.elastic-cloud.com"
+  resource_group_name = "rg-agentic-ai-dev"
+  vnet_link_name      = "link-elastic-aks-dev"
+
+  virtual_network_id  = var.elastic_private_dns_vnet_id
+  private_endpoint_ip = module.elastic_private_endpoint.private_ip_address
+
+  tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+data "azurerm_client_config" "current" {}
+
+module "elastic_key_vault" {
+  source = "../../modules/key-vault"
+
+  name                = "azure-elastic-vault"
+  location            = "southeastasia"
+  resource_group_name = "rg-agentic-ai-dev"
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+
+  tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+module "azure_activity_eventhub" {
+  source = "../../modules/event-hub"
+
+  namespace_name      = "evhns-agentic-ai-dev"
+  eventhub_name       = "azure-activity-logs"
+  location            = "southeastasia"
+  resource_group_name = "rg-agentic-ai-dev"
+}
+
+module "elastic_checkpoint_storage" {
+  source = "../../modules/elastic-checkpoint-storage"
+
+  storage_account_name = "stelasticagenticdev094b"
+  resource_group_name  = "rg-agentic-ai-dev"
+  location             = "southeastasia"
+}
+
+module "azure_activity_diagnostics" {
+  source = "../../modules/azure-monitor-diagnostics"
+
+  name            = "Ingest-diagnostic-logs"
+  subscription_id = "24b9de15-144b-4166-aa90-50be978dea9b"
+
+  eventhub_name = module.azure_activity_eventhub.eventhub_name
+
+  eventhub_authorization_rule_id = (
+    module.azure_activity_eventhub.diagnostics_rule_id
+  )
+}
