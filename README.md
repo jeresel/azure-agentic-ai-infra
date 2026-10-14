@@ -48,15 +48,28 @@ flowchart TB
 ## Repository layout
 
 ```text
-azure-agentic-ai-infra/
-├── bootstrap/                   # Remote-state resource provisioning
-├── environments/
-│   └── dev/                    # Development environment and module wiring
-└── modules/
-    ├── resource-group/
-    ├── network/
-    ├── acr/
-    └── aks/
+Azure Agentic AI CloudOps Platform
+│
+├── azure-agentic-ai-infra
+│   ├── Terraform Remote State
+│   ├── Azure Networking
+│   ├── Azure Kubernetes Service
+│   ├── Azure Container Registry
+│   ├── Microsoft Foundry Infrastructure
+│   ├── Azure Monitor Diagnostics
+│   ├── Event Hub
+│   ├── Elastic Checkpoint Storage
+│   ├── Key Vault
+│   ├── Private Endpoint / Private DNS
+│   └── Workload Identity
+│
+└── azure-agentic-ai-k8s
+    ├── FastAPI Backend
+    ├── CloudOps Web GUI
+    ├── LangGraph Agent
+    ├── Kubernetes Diagnostics
+    ├── Microsoft Foundry Integration
+    └── Kubernetes Deployment Manifests
 ```
 
 The precise Terraform filenames and module inputs are defined in the repository source. The examples below illustrate the workflow rather than replacing the checked-in configuration.
@@ -68,7 +81,7 @@ The precise Terraform filenames and module inputs are defined in the repository 
 | Development resource group | `rg-agentic-ai-dev` |
 | Original VNet | `vnet-agentic-ai-dev`, `xxxxx/16`, Southeast Asia |
 | Original AKS subnet | `snet-aks-dev`, `xxxx/24` |
-| Container registry | `acragenticaidev094b`, Southeast Asia |
+| Container registry | `acragenticaidevxxx`, Southeast Asia |
 | AKS VNet | `vnet-agentic-ai-aks-dev`, `xxxx/16`, East Asia |
 | AKS subnet | `snet-aks-eastasia-dev`, `xxxx/24` |
 | AKS cluster | `aks-agentic-ai-dev`, East Asia |
@@ -83,7 +96,7 @@ The precise Terraform filenames and module inputs are defined in the repository 
 A separate bootstrap configuration created the remote state resources:
 
 - Resource group: `rg-agentic-ai-tfstate`
-- Storage account: `stagenticaitf094b1972`
+- Storage account: `stagenticaitfxxxxx`
 - Blob container: `tfstate`
 - State key: `agentic-ai/dev/terraform.tfstate`
 
